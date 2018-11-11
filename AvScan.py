@@ -3,7 +3,7 @@
 # Windows
 # AVScan.py
 # By: LawlietJH
-#      v.1.1.2
+#      v.1.1.3
 
 # Para python 2 el módulo es '_winreg'.
 # Para python 3 el módulo es 'winreg'.
@@ -162,25 +162,35 @@ class AvScan():
 		log = ''
 		lista_procesos = []
 		
-		procesos = self.run_command('wmic process get name, ProcessId').split('\n')
+		procesos = self.run_command('wmic process get name, ProcessId, ParentProcessId').split('\n')
 		
 		for proc in procesos:
-		
-			proc = proc.strip().split(' ')
-			name = proc[0]
-			pid  = proc[-1]
+			
+			lista = []
+			tempProc = proc.strip().split(' ')
+			
+			if len(tempProc) == 1: continue
+			
+			for temp in tempProc:
+				if temp != '':
+					lista.append(temp)
+			
+			name = lista[0]
+			ppid = lista[1]
+			pid  = lista[2]
 			
 			if name.endswith('.exe') and (name.lower() in avs):
-				lista_procesos.append((pid, name))
+				lista_procesos.append(lista)
 		
 		if len(lista_procesos) > 0:
 			
 			lista_procesos.sort()
 			
-			for pid, nombre in lista_procesos:
+			for nombre, ppid, pid in lista_procesos:
 				log += '    ' + pid
 				log += '\t\t' if len(pid) < 4 else '\t'
-				log += '  ' + nombre + '\n'
+				log += ppid
+				log += '\t    ' + nombre + '\n'
 		
 		else: log += '\n [-] No se detectaron otros posibles AVs, HIPS y/o Firewalls de terceros.\n'
 		
@@ -202,8 +212,8 @@ if __name__ == '__main__':
 	log += AvS.getAVsDetected()
 	log += '\n\n\n'
 	log += ' [+] Escaneo de procesos:\n\n'
-	log += '    PID \t  Nombre de la Imagen\n'
-	log += '   ______\t ________________________________\n\n'
+	log += '    PID      PID Padre      Nombre de la Imagen\n'
+	log += '   ______   ___________    ________________________________\n\n'
 	log += AvS.getPossibleProcess()
 	
 	print(log)
